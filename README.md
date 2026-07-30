@@ -140,8 +140,3 @@ src/lib/blindSpotProfile.ts     blind-spot percentage math
 src/data/presets.ts             persona config, dimensions, demo presets
 src/__tests__/                  helper and math tests
 ```
-
-## Submission Notes
-
-IBM SkillsBuild / Bob learning activity completed:
-Team should replace this line with exact activity name and completion detail before final submission.
