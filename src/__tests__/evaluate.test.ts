@@ -208,18 +208,18 @@ describe('evaluation helpers', () => {
 
     it('rejects JSON array instead of object', () => {
       expect(() => parseModelPayload(JSON.stringify([{ unexpected: 'array response' }])))
-        .toThrow(/unexpected response shape/i);
+        .toThrow(/AI response was incomplete/i);
     });
 
     it('rejects valid JSON object with missing sections key', () => {
       expect(() => parseModelPayload(JSON.stringify({
         overall_summary: { novice: 'x', expert: 'x', skeptic: 'x', emotional: 'x' },
-      }))).toThrow(/unexpected response shape/i);
+      }))).toThrow(/AI response was incomplete/i);
     });
 
     it('rejects malformed non-JSON text', () => {
       expect(() => parseModelPayload('This is definitely not JSON {{{'))
-        .toThrow(/non-json/i);
+        .toThrow(/AI response could not be parsed/i);
     });
 
     it('rejects missing emotional field on emotional persona', () => {
@@ -333,6 +333,28 @@ describe('evaluation helpers', () => {
       delete process.env.WATSONX_PROJECT_ID;
       await expect(evaluateText('test', fakeClient))
         .rejects.toThrow(/WATSONX_PROJECT_ID/i);
+    });
+
+    it('surfaces plain-language parse failure from watsonx output', async () => {
+      mockTextChat.mockResolvedValue({
+        result: {
+          choices: [{ message: { content: 'not valid json' } }],
+        },
+      });
+
+      await expect(evaluateText('test', fakeClient))
+        .rejects.toThrow('AI response could not be parsed. Please try again.');
+    });
+
+    it('surfaces plain-language validation failure from watsonx output', async () => {
+      mockTextChat.mockResolvedValue({
+        result: {
+          choices: [{ message: { content: JSON.stringify([{ bad: 'shape' }]) } }],
+        },
+      });
+
+      await expect(evaluateText('test', fakeClient))
+        .rejects.toThrow('AI response was incomplete. Please try again.');
     });
   });
 });

@@ -1,6 +1,6 @@
 # Cognitive Mirror
 
-Train your creative judgment, not just your writing. Cognitive Mirror does not generate replacement copy or rewrite your draft for you. It takes your story opening, startup pitch, lyric, or brand tagline, runs one structured IBM watsonx.ai evaluation across four distinct reader lenses, and shows where those lenses agree, clash, and expose blind spots you would likely miss on your own.
+Train your creative judgment, not just your writing. Cognitive Mirror does not generate replacement copy or rewrite your draft for you. It takes your story opening, startup pitch, lyric, or brand tagline, runs one structured IBM watsonx.ai evaluation across four distinct reader lenses, and shows where those lenses agree, clash, and expose blind spots you would likely miss on your own. On IBM Granite pricing, one typical evaluation is only a fraction of a cent, because app makes one server-side model call and computes every downstream metric locally.
 
 ## Pipeline
 
@@ -29,7 +29,9 @@ Project directly supports challenge goal to help creators work smarter, explore 
 
 ### Feasibility
 
-Each evaluation uses one low-cost IBM model call plus local arithmetic. No orchestration graph, no multi-agent chain, no repeated sampling loop. That makes product deployable now for writing workshops, editors, MFA programs, solo founders, indie musicians, and creative coaches without research-lab infrastructure or high marginal inference cost.
+Each evaluation uses one IBM Granite call plus local arithmetic. No orchestration graph, no multi-agent chain, no repeated sampling loop. Based on IBM watsonx.ai pricing for `ibm/granite-3-3-8b-instruct` at about `$0.0002` per 1,000 input tokens and `$0.0002` per 1,000 output tokens, a typical 500-2000 character submission with this JSON schema is roughly an estimated `300-800` input tokens and `900-1800` output tokens, or about `$0.00024-$0.00052` per evaluation. Rounded: roughly `0.02-0.05 cents` per run.
+
+Latency is also bounded by design. Because each evaluation is one model request with no chained agent calls, retries, or follow-up generations, a practical demo estimate is roughly `2-6 seconds` per evaluation depending on region and queue conditions. At that cost range, a workshop of `25` students running `20` evaluations each in a month is still only about `500` total evaluations, or roughly `$0.12-$0.26` in model inference cost before platform overhead.
 
 ### Real-World Impact
 

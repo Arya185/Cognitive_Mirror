@@ -13,7 +13,7 @@ app.set('trust proxy', 1);
 app.use(express.json({ limit: '1mb' }));
 app.use((error: unknown, _req: express.Request, res: express.Response, next: express.NextFunction) => {
   if (error instanceof SyntaxError && 'status' in error && error.status === 400) {
-    return res.status(400).json({ error: 'Malformed JSON request body.' });
+    return res.status(400).json({ error: 'Request payload could not be read. Please try again.' });
   }
   next(error);
 });
@@ -264,15 +264,15 @@ function validateSection(value: unknown): SectionResult {
 
 export function validateEvaluationResult(value: unknown): EvaluationResult {
   if (!isRecord(value)) {
-    throw new Error('Model returned an unexpected response shape. Please try again.');
+    throw new Error('AI response was incomplete. Please try again.');
   }
 
   const { sections, overall_summary: overallSummary } = value;
   if (!Array.isArray(sections) || sections.length < 2 || sections.length > 5) {
-    throw new Error('Model returned an unexpected response shape. Please try again.');
+    throw new Error('AI response was incomplete. Please try again.');
   }
   if (!isRecord(overallSummary)) {
-    throw new Error('Model returned an unexpected response shape. Please try again.');
+    throw new Error('AI response was incomplete. Please try again.');
   }
 
   const novice = overallSummary.novice;
@@ -285,7 +285,7 @@ export function validateEvaluationResult(value: unknown): EvaluationResult {
     typeof skeptic !== 'string' ||
     typeof emotional !== 'string'
   ) {
-    throw new Error('Model returned an unexpected response shape. Please try again.');
+    throw new Error('AI response was incomplete. Please try again.');
   }
 
   return {
@@ -322,7 +322,7 @@ export function parseModelPayload(rawContent: string): EvaluationResult {
   try {
     evaluationData = JSON.parse(jsonText);
   } catch {
-    throw new Error('Model returned non-JSON output. Please try again.');
+    throw new Error('AI response could not be parsed. Please try again.');
   }
 
   return validateEvaluationResult(evaluationData);
@@ -373,7 +373,7 @@ app.post('/api/evaluate', evaluateLimiter, async (req, res) => {
         ) {
           return res.status(400).json({ error: error.message });
         }
-        if (error.message === 'Model returned an unexpected response shape. Please try again.') {
+        if (error.message === 'AI response was incomplete. Please try again.') {
           return res.status(502).json({ error: error.message });
         }
       }

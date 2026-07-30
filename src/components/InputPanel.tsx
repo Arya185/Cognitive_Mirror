@@ -1,7 +1,7 @@
 import React from 'react';
 import { PRESET_SAMPLES } from '../data/presets';
 import { PresetSample } from '../types';
-import { FileText, ArrowRight, RefreshCw, Terminal, Sliders, Layers, Sparkles } from 'lucide-react';
+import { FileText, ArrowRight, RefreshCw, Terminal, Sliders, Layers, Sparkles, AlertTriangle } from 'lucide-react';
 
 interface InputPanelProps {
   inputText: string;
@@ -123,8 +123,9 @@ export const InputPanel: React.FC<InputPanelProps> = ({
       </div>
 
       {error && (
-        <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-xs font-mono text-rose-600 flex items-center justify-between">
-          <span>[ERR]: {error}</span>
+        <div className="p-4 rounded-2xl bg-rose-100 border-2 border-rose-300 text-sm font-mono text-rose-800 flex items-start gap-3 shadow-[inset_2px_2px_6px_rgba(255,255,255,0.45)]">
+          <AlertTriangle className="w-5 h-5 text-rose-700 flex-shrink-0 mt-0.5" />
+          <span className="leading-relaxed font-semibold">[ERR]: {error}</span>
         </div>
       )}
 
@@ -147,8 +148,8 @@ export const InputPanel: React.FC<InputPanelProps> = ({
         >
           {isLoading ? (
             <>
-              <RefreshCw className="w-4 h-4 animate-spin" />
-              <span>Executing Engine...</span>
+              <RefreshCw className="w-5 h-5 animate-spin" />
+              <span>EXECUTING ENGINE...</span>
             </>
           ) : (
             <>

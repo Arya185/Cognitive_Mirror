@@ -10,7 +10,7 @@ import { SectionViewer } from './components/SectionViewer';
 import { ExportModal } from './components/ExportModal';
 import { PRESET_SAMPLES } from './data/presets';
 import { EvaluationResult, PresetSample, PersonaId } from './types';
-import { Sparkles, Download, ArrowLeft, RefreshCw, LayoutGrid } from 'lucide-react';
+import { Sparkles, Download, ArrowLeft, RefreshCw, LayoutGrid, Activity, LoaderCircle } from 'lucide-react';
 
 // -----------------------------------------------------------------------------
 // Custom Hook: useEvaluation
@@ -22,6 +22,35 @@ function useEvaluation(initialText: string) {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<EvaluationResult | null>(null);
   const [selectedSectionId, setSelectedSectionId] = useState<number | null>(null);
+
+  const formatErrorMessage = useCallback((message: string) => {
+    if (/AI response was incomplete/i.test(message) || /AI response could not be parsed/i.test(message)) {
+      return message;
+    }
+    if (/WATSONX_API_KEY environment variable is not configured/i.test(message) || /WATSONX_PROJECT_ID environment variable is not configured/i.test(message)) {
+      return 'IBM watsonx.ai credentials are unavailable. Check server configuration.';
+    }
+    if (/Too many evaluation requests/i.test(message)) {
+      return 'Rate limit reached. Wait a moment, then run again.';
+    }
+    if (/Failed to fetch/i.test(message)) {
+      return 'Evaluation service is unreachable. Check server connection.';
+    }
+    return message;
+  }, []);
+
+  const readErrorMessage = useCallback(async (response: Response) => {
+    try {
+      const errorData = await response.json();
+      if (typeof errorData?.error === 'string' && errorData.error.trim().length > 0) {
+        return errorData.error;
+      }
+    } catch {
+      return `Request failed (${response.status}). Please try again.`;
+    }
+
+    return `Request failed (${response.status}). Please try again.`;
+  }, []);
 
   const selectPreset = useCallback((preset: PresetSample) => {
     setActivePresetId(preset.id);
@@ -43,8 +72,8 @@ function useEvaluation(initialText: string) {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to evaluate writing sample.');
+        const errorMessage = await readErrorMessage(response);
+        throw new Error(formatErrorMessage(errorMessage));
       }
 
       const data: EvaluationResult = await response.json();
@@ -56,11 +85,15 @@ function useEvaluation(initialText: string) {
       console.error('Cognitive Mirror error:', err);
       setResult(null);
       setSelectedSectionId(null);
-      setError(err instanceof Error ? err.message : 'An unexpected error occurred during analysis.');
+      setError(
+        err instanceof Error
+          ? formatErrorMessage(err.message)
+          : 'Evaluation failed. Please try again.'
+      );
     } finally {
       setIsLoading(false);
     }
-  }, [inputText]);
+  }, [formatErrorMessage, inputText, readErrorMessage]);
 
   const reset = useCallback(() => {
     setResult(null);
@@ -131,6 +164,18 @@ function InputView({
         activePresetId={activePresetId}
         error={error}
       />
+
+      {isLoading && (
+        <div className="neu-card rounded-3xl p-5 flex items-center gap-3 border border-blue-100 bg-white/90">
+          <div className="p-2 rounded-xl bg-blue-50 text-blue-600 border border-blue-100">
+            <LoaderCircle className="w-5 h-5 animate-spin" />
+          </div>
+          <div className="font-mono text-sm text-slate-700">
+            <div className="font-bold text-slate-900">[RUNNING]: Cognitive Persona Engine active.</div>
+            <div className="text-xs text-slate-500 mt-1">Awaiting structured IBM watsonx.ai response...</div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -201,6 +246,7 @@ interface ResultsDashboardProps {
   isLoading: boolean;
   onReset: () => void;
   onExport: () => void;
+  error: string | null;
 }
 
 function ResultsDashboard({
@@ -211,6 +257,7 @@ function ResultsDashboard({
   isLoading,
   onReset,
   onExport,
+  error,
 }: ResultsDashboardProps) {
   const [activePersonaFilter, setActivePersonaFilter] = useState<PersonaId | 'all'>('all');
 
@@ -223,6 +270,30 @@ function ResultsDashboard({
         onExport={onExport}
         sectionCount={result.sections.length}
       />
+
+      {(isLoading || error) && (
+        <div className={`neu-card rounded-3xl p-4 flex items-start gap-3 ${
+          error
+            ? 'border-2 border-rose-300 bg-rose-100/80'
+            : 'border border-blue-100 bg-white/90'
+        }`}>
+          <div className={`p-2 rounded-xl border ${
+            error
+              ? 'bg-rose-50 text-rose-700 border-rose-200'
+              : 'bg-blue-50 text-blue-600 border-blue-100'
+          }`}>
+            {error ? <Activity className="w-5 h-5" /> : <LoaderCircle className="w-5 h-5 animate-spin" />}
+          </div>
+          <div className="font-mono text-sm">
+            <div className="font-bold text-slate-900">
+              {error ? '[ERR]: Re-evaluation failed.' : '[RUNNING]: Refreshing telemetry.'}
+            </div>
+            <div className="text-xs text-slate-600 mt-1">
+              {error ? error : 'Existing result remains visible until new response lands.'}
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-1">
@@ -272,7 +343,7 @@ function Footer() {
           <LayoutGrid className="w-4 h-4 text-blue-600" />
           <span className="font-bold text-slate-900">COGNITIVE MIRROR ENGINE</span>
         </div>
-        <div>POWERED BY IBM WATSONX.AI (GRANITE) • SYS.V1.4</div>
+        <div>POWERED BY IBM WATSONX.AI (GRANITE) • MULTI-PERSONA TELEMETRY</div>
       </div>
     </footer>
   );
@@ -360,6 +431,7 @@ export default function App() {
             isLoading={isLoading}
             onReset={handleReset}
             onExport={handleExport}
+            error={error}
           />
         )}
       </main>
