@@ -3,13 +3,14 @@ import { Header } from './components/Header';
 import { InputPanel } from './components/InputPanel';
 import { DisagreementMatrix } from './components/DisagreementMatrix';
 import { BlindSpotAlerts } from './components/BlindSpotAlerts';
+import { BlindSpotProfile } from './components/BlindSpotProfile';
 import { PersonaMetrics } from './components/PersonaMetrics';
 import { OverallSummaryCard } from './components/OverallSummaryCard';
 import { SectionViewer } from './components/SectionViewer';
 import { ExportModal } from './components/ExportModal';
 import { PRESET_SAMPLES } from './data/presets';
 import { EvaluationResult, PresetSample, PersonaId } from './types';
-import { Sparkles, Download, ArrowLeft, RefreshCw, Activity, LayoutGrid } from 'lucide-react';
+import { Sparkles, Download, ArrowLeft, RefreshCw, LayoutGrid } from 'lucide-react';
 
 export default function App() {
   const [inputText, setInputText] = useState<string>(PRESET_SAMPLES[0].text);
@@ -161,8 +162,13 @@ export default function App() {
                 />
               </div>
 
-              {/* Bento Box 3: Blind Spot Disconnect Profile */}
-              <div className="lg:col-span-3">
+              {/* Bento Box 3a: Blind Spot Profile — dimension severity bars */}
+              <div className="lg:col-span-2">
+                <BlindSpotProfile result={result} />
+              </div>
+
+              {/* Bento Box 3b: Blind Spot Disconnect Alerts */}
+              <div className="lg:col-span-1">
                 <BlindSpotAlerts result={result} />
               </div>
 
@@ -201,7 +207,7 @@ export default function App() {
             <span className="font-bold text-slate-900">COGNITIVE MIRROR ENGINE</span>
             <span>— WHITE NEOMORPHIC BENTO GRID</span>
           </div>
-          <div>POWERED BY GEMINI 3.6 FLASH • SYS.V1.4</div>
+          <div>POWERED BY IBM WATSONX.AI (GRANITE) • SYS.V1.4</div>
         </div>
       </footer>
     </div>

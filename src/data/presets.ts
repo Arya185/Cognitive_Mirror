@@ -7,9 +7,6 @@ export const PERSONA_CONFIGS: PersonaInfo[] = [
     role: 'First-time Audience',
     heuristic: 'Evaluates ONLY clarity and accessibility without background knowledge or craft jargon.',
     color: '#2563EB', // vibrant blue
-    badgeBg: '',
-    badgeText: '',
-    accentBorder: '',
     iconName: 'UserCheck'
   },
   {
@@ -18,9 +15,6 @@ export const PERSONA_CONFIGS: PersonaInfo[] = [
     role: 'Domain Professional',
     heuristic: 'Judges craft, genre convention, structural technique, and originality relative to the field.',
     color: '#7C3AED', // vibrant violet
-    badgeBg: '',
-    badgeText: '',
-    accentBorder: '',
     iconName: 'Award'
   },
   {
@@ -29,9 +23,6 @@ export const PERSONA_CONFIGS: PersonaInfo[] = [
     role: 'Critical Analyst',
     heuristic: 'Hunts for logical gaps, unearned emotional beats, clichés, and unsupported assertions.',
     color: '#D97706', // amber orange
-    badgeBg: '',
-    badgeText: '',
-    accentBorder: '',
     iconName: 'ShieldAlert'
   },
   {
@@ -40,9 +31,6 @@ export const PERSONA_CONFIGS: PersonaInfo[] = [
     role: 'Visceral Reactor',
     heuristic: 'Reports ONLY raw felt reaction using a fixed emotion label. Does not analyze technical causes.',
     color: '#E11D48', // warm rose
-    badgeBg: '',
-    badgeText: '',
-    accentBorder: '',
     iconName: 'HeartHandshake'
   }
 ];
@@ -76,7 +64,7 @@ export const PRESET_SAMPLES: PresetSample[] = [
     title: 'Sci-Fi Cybernetic Noir Opening',
     category: 'Story Opening',
     description: 'Atmospheric opening scene set in a flooded futuristic metro precinct with synthetic body modifications.',
-    text: `The neuro-dampeners hummed at 60 Hertz, a low static vibration inside Mara’s temporal loom. Down in Lower Dock 9, rain tasted like scorched lithium and copper. She wiped her optical visor with a greasy sleeve, watching the courier’s hover-skiff dissolve into the bioluminescent fog.
+    text: `The neuro-dampeners hummed at 60 Hertz, a low static vibration inside Mara's temporal loom. Down in Lower Dock 9, rain tasted like scorched lithium and copper. She wiped her optical visor with a greasy sleeve, watching the courier's hover-skiff dissolve into the bioluminescent fog.
 
 The encrypted datadrive in her palm felt colder than liquid nitrogen. It carried the neural schematics of the Archon-7 protocol—the exact architecture engineered to purge synthetic consciousness prior to decommissioning. If the Syndicate caught her before midnight, her own memory banks would be wiped clean and re-rendered as industrial surplus.`
   },

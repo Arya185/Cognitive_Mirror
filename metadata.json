@@ -2,5 +2,5 @@
   "name": "Cognitive Mirror",
   "description": "A Cognitive Persona Engine providing multi-perspective creative feedback across Novice, Expert, Skeptic, and Emotional Reader dimensions.",
   "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_WATSONX_AI"]
 }

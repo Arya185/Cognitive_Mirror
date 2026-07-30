@@ -1,6 +1,7 @@
 import React from 'react';
 import { EvaluationResult } from '../types';
 import { PERSONA_CONFIGS } from '../data/presets';
+import { computeSectionStats } from '../lib/sectionStats';
 import { DivergenceGauge } from './DivergenceGauge';
 import { Zap, Scale, Flame } from 'lucide-react';
 
@@ -15,29 +16,11 @@ export const DisagreementMatrix: React.FC<DisagreementMatrixProps> = ({
   selectedSectionId,
   onSelectSection,
 }) => {
-  // Compute disagreement metric per section
-  const sectionMetrics = result.sections.map((section) => {
-    const scores = section.personas.map((p) => p.score);
-    const minScore = Math.min(...scores);
-    const maxScore = Math.max(...scores);
-    const range = maxScore - minScore;
-    const avgScore = Number((scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1));
-
-    // Standard deviation
-    const variance = scores.reduce((acc, val) => acc + Math.pow(val - avgScore, 2), 0) / scores.length;
-    const stdDev = Number(Math.sqrt(variance).toFixed(2));
-
-    return {
-      sectionId: section.id,
-      excerpt: section.excerpt,
-      minScore,
-      maxScore,
-      range,
-      avgScore,
-      stdDev,
-      isHighFriction: range >= 2,
-    };
-  });
+  // Compute disagreement metric per section using shared helper
+  const sectionMetrics = result.sections.map((section) => ({
+    ...computeSectionStats(section),
+    excerpt: section.excerpt,
+  }));
 
   const highFrictionCount = sectionMetrics.filter((m) => m.isHighFriction).length;
   const overallAvgDivergence = Number(
@@ -97,7 +80,7 @@ export const DisagreementMatrix: React.FC<DisagreementMatrixProps> = ({
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div className="flex items-center space-x-2.5">
                   <span className="font-mono text-xs font-extrabold px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-700 border border-blue-200">
-                    §0{section.id}
+                    §{String(section.id).padStart(2, '0')}
                   </span>
                   <span className="text-xs italic font-medium text-slate-800 line-clamp-1 font-sans">
                     "{section.excerpt}"

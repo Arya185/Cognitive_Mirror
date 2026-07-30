@@ -77,7 +77,7 @@ export const DivergenceGauge: React.FC<DivergenceGaugeProps> = ({ section, compa
                 {/* Micro Label / Tooltip on Hover */}
                 <div
                   className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900 text-white text-[10px] px-2 py-0.5 rounded-md shadow-md whitespace-nowrap z-20 pointer-events-none"
-                  style={{ borderLeftColor: pConfig.color, borderLeftWidth: '3px' }}
+                  style={{ borderLeftColor: pConfig.color, borderLeftWidth: '3px', borderLeftStyle: 'solid' }}
                 >
                   <span style={{ color: pConfig.color }} className="font-bold uppercase">
                     {pConfig.name.substring(0, 3)}

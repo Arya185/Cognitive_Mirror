@@ -3,43 +3,45 @@
  *
  * Strategy
  * ─────────
- * `@google/genai` is fully mocked via vi.mock() so no live API key is needed.
- * The mock exposes `__setNextResponse(text)` and `__setNextError(err)` helpers
- * that tests use to inject specific model responses or failures.
+ * `@ibm-cloud/watsonx-ai` and its `authentication` sub-path are fully mocked
+ * via vi.mock() so no live credentials are needed.
+ *
+ * The mock replaces `client.textChat()` — the only method the route calls.
+ * `_nextContent` controls the string the mock returns as
+ *   response.result.choices[0].message.content
+ * `_nextError` makes the mock throw instead.
  *
  * The Express app is imported from src/app.ts (which does NOT call startServer),
  * so no port is bound during the test run.
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi } from 'vitest';
 import request from 'supertest';
 import type { EvaluationResult, PersonaId, EmotionType } from '../types.js';
 
-// ── Mock @google/genai ────────────────────────────────────────────────────────
+// ── Mock @ibm-cloud/watsonx-ai ────────────────────────────────────────────────
 
-let _nextText: string | null = null;
+let _nextContent: string | null = null;
 let _nextError: Error | null = null;
 
-const mockGenerateContent = vi.fn(async () => {
+const mockTextChat = vi.fn(async () => {
   if (_nextError) throw _nextError;
-  return { text: _nextText };
-});
-
-vi.mock('@google/genai', () => {
   return {
-    // Must use a real function (not an arrow) so it can be called with `new`
-    GoogleGenAI: vi.fn(function () {
-      return { models: { generateContent: mockGenerateContent } };
-    }),
-    Type: {
-      OBJECT: 'OBJECT',
-      ARRAY: 'ARRAY',
-      STRING: 'STRING',
-      INTEGER: 'INTEGER',
-      NUMBER: 'NUMBER',
+    result: {
+      choices: [{ message: { content: _nextContent } }],
     },
   };
 });
+
+vi.mock('@ibm-cloud/watsonx-ai', () => ({
+  WatsonXAI: {
+    newInstance: vi.fn(() => ({ textChat: mockTextChat })),
+  },
+}));
+
+vi.mock('@ibm-cloud/watsonx-ai/authentication', () => ({
+  IamAuthenticator: vi.fn(function () { return {}; }),
+}));
 
 // ── Test helpers ──────────────────────────────────────────────────────────────
 
@@ -83,33 +85,41 @@ function buildValidPayload(sectionCount = 2): string {
   return JSON.stringify(payload);
 }
 
-// ── Import app AFTER mock is declared ────────────────────────────────────────
+// ── Import app AFTER mocks are declared ──────────────────────────────────────
 // Dynamic import ensures vi.mock() is hoisted and applied before the module loads.
+
+// Set required env vars before importing app (WATSONX_PROJECT_ID is read per-request)
+process.env.WATSONX_API_KEY     = 'test-key';
+process.env.WATSONX_PROJECT_ID  = 'test-project';
+process.env.WATSONX_SERVICE_URL = 'https://test.ml.cloud.ibm.com';
 
 const { app, setAiClient } = await import('../app.js');
 
-// Inject a fake client object directly (bypasses constructor entirely)
-const fakeClient = { models: { generateContent: mockGenerateContent } } as any;
+// Inject a fake client directly (bypasses WatsonXAI.newInstance entirely)
+const fakeClient = { textChat: mockTextChat } as any;
 setAiClient(fakeClient);
 
 // ── Suite ─────────────────────────────────────────────────────────────────────
 
 describe('POST /api/evaluate', () => {
   beforeEach(() => {
-    _nextText = null;
+    _nextContent = null;
     _nextError = null;
-    mockGenerateContent.mockClear();
+    mockTextChat.mockClear();
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
+    // Re-inject the fake client so other test files or ordering changes cannot
+    // accidentally leave aiClient in a null/wrong state between tests.
+    setAiClient(fakeClient);
   });
 
   // ── 1. Schema validation ───────────────────────────────────────────────────
 
   describe('response schema enforcement', () => {
     it('returns parsed JSON with a top-level sections array', async () => {
-      _nextText = buildValidPayload(2);
+      _nextContent = buildValidPayload(2);
 
       const res = await request(app)
         .post('/api/evaluate')
@@ -121,7 +131,7 @@ describe('POST /api/evaluate', () => {
     });
 
     it('returns an overall_summary object with all four persona keys', async () => {
-      _nextText = buildValidPayload(2);
+      _nextContent = buildValidPayload(2);
 
       const res = await request(app)
         .post('/api/evaluate')
@@ -137,7 +147,7 @@ describe('POST /api/evaluate', () => {
     });
 
     it('every section contains exactly 4 personas: novice, expert, skeptic, emotional', async () => {
-      _nextText = buildValidPayload(3);
+      _nextContent = buildValidPayload(3);
 
       const res = await request(app)
         .post('/api/evaluate')
@@ -148,14 +158,13 @@ describe('POST /api/evaluate', () => {
 
       for (const section of sections) {
         expect(section.personas).toHaveLength(4);
-
         const ids = section.personas.map((p: { id: PersonaId }) => p.id).sort();
         expect(ids).toEqual(['emotional', 'expert', 'novice', 'skeptic']);
       }
     });
 
     it('each persona in every section has the required fields (id, score, confidence, note)', async () => {
-      _nextText = buildValidPayload(2);
+      _nextContent = buildValidPayload(2);
 
       const res = await request(app)
         .post('/api/evaluate')
@@ -175,7 +184,7 @@ describe('POST /api/evaluate', () => {
     });
 
     it('each section has a valid dimensions array (1-2 entries from the fixed list)', async () => {
-      _nextText = buildValidPayload(2);
+      _nextContent = buildValidPayload(2);
 
       const res = await request(app)
         .post('/api/evaluate')
@@ -195,7 +204,7 @@ describe('POST /api/evaluate', () => {
     });
 
     it('each section importance score is an integer between 1 and 5', async () => {
-      _nextText = buildValidPayload(2);
+      _nextContent = buildValidPayload(2);
 
       const res = await request(app)
         .post('/api/evaluate')
@@ -212,7 +221,7 @@ describe('POST /api/evaluate', () => {
     });
 
     it('persona scores are integers between 1 and 5', async () => {
-      _nextText = buildValidPayload(2);
+      _nextContent = buildValidPayload(2);
 
       const res = await request(app)
         .post('/api/evaluate')
@@ -231,7 +240,7 @@ describe('POST /api/evaluate', () => {
     });
 
     it('persona confidence is a number between 0.0 and 1.0', async () => {
-      _nextText = buildValidPayload(2);
+      _nextContent = buildValidPayload(2);
 
       const res = await request(app)
         .post('/api/evaluate')
@@ -254,7 +263,7 @@ describe('POST /api/evaluate', () => {
 
   describe('"emotion" field on the emotional persona', () => {
     it('emotional persona includes an "emotion" field from the fixed list', async () => {
-      _nextText = buildValidPayload(2);
+      _nextContent = buildValidPayload(2);
 
       const res = await request(app)
         .post('/api/evaluate')
@@ -272,7 +281,7 @@ describe('POST /api/evaluate', () => {
     });
 
     it('novice persona does NOT include an "emotion" field', async () => {
-      _nextText = buildValidPayload(2);
+      _nextContent = buildValidPayload(2);
 
       const res = await request(app)
         .post('/api/evaluate')
@@ -289,7 +298,7 @@ describe('POST /api/evaluate', () => {
     });
 
     it('expert persona does NOT include an "emotion" field', async () => {
-      _nextText = buildValidPayload(2);
+      _nextContent = buildValidPayload(2);
 
       const res = await request(app)
         .post('/api/evaluate')
@@ -306,7 +315,7 @@ describe('POST /api/evaluate', () => {
     });
 
     it('skeptic persona does NOT include an "emotion" field', async () => {
-      _nextText = buildValidPayload(2);
+      _nextContent = buildValidPayload(2);
 
       const res = await request(app)
         .post('/api/evaluate')
@@ -323,27 +332,24 @@ describe('POST /api/evaluate', () => {
     });
 
     it('emotional persona emotion value is one of the 8 allowed emotions', async () => {
-      // Try each allowed emotion to confirm all 8 pass validation
       for (const emotion of VALID_EMOTIONS) {
-        const sections = [
+        const sections: import('../types.js').SectionResult[] = [
           {
             id: 1,
             excerpt: 'Test excerpt text here',
-            dimensions: ['clarity'],
+            dimensions: ['clarity' as const],
             importance: 3,
             personas: [
-              { id: 'novice',    score: 3, confidence: 0.8, note: 'Clear enough.' },
-              { id: 'expert',    score: 4, confidence: 0.9, note: 'Well crafted.' },
-              { id: 'skeptic',   score: 2, confidence: 0.7, note: 'Logical gap.' },
-              { id: 'emotional', score: 4, confidence: 0.85, note: 'Felt it.', emotion },
+              { id: 'novice'    as const, score: 3, confidence: 0.8,  note: 'Clear enough.' },
+              { id: 'expert'    as const, score: 4, confidence: 0.9,  note: 'Well crafted.' },
+              { id: 'skeptic'   as const, score: 2, confidence: 0.7,  note: 'Logical gap.' },
+              { id: 'emotional' as const, score: 4, confidence: 0.85, note: 'Felt it.', emotion: emotion },
             ],
           },
         ];
-        _nextText = JSON.stringify({
+        _nextContent = JSON.stringify({
           sections,
-          overall_summary: {
-            novice: 'OK', expert: 'OK', skeptic: 'OK', emotional: 'OK',
-          },
+          overall_summary: { novice: 'OK', expert: 'OK', skeptic: 'OK', emotional: 'OK' },
         });
 
         const res = await request(app)
@@ -363,59 +369,49 @@ describe('POST /api/evaluate', () => {
 
   describe('input validation errors', () => {
     it('returns 400 when text field is missing', async () => {
-      const res = await request(app)
-        .post('/api/evaluate')
-        .send({});
-
+      const res = await request(app).post('/api/evaluate').send({});
       expect(res.status).toBe(400);
       expect(res.body).toHaveProperty('error');
       expect(res.body.error).toMatch(/required/i);
     });
 
     it('returns 400 when text is an empty string', async () => {
-      const res = await request(app)
-        .post('/api/evaluate')
-        .send({ text: '' });
-
+      const res = await request(app).post('/api/evaluate').send({ text: '' });
       expect(res.status).toBe(400);
       expect(res.body).toHaveProperty('error');
       expect(res.body.error).toMatch(/required/i);
     });
 
     it('returns 400 when text is whitespace only', async () => {
-      const res = await request(app)
-        .post('/api/evaluate')
-        .send({ text: '   \n\t  ' });
-
+      const res = await request(app).post('/api/evaluate').send({ text: '   \n\t  ' });
       expect(res.status).toBe(400);
       expect(res.body).toHaveProperty('error');
       expect(res.body.error).toMatch(/required/i);
     });
 
     it('returns 400 when text field is a non-string type (number)', async () => {
-      const res = await request(app)
-        .post('/api/evaluate')
-        .send({ text: 42 });
-
+      const res = await request(app).post('/api/evaluate').send({ text: 42 });
       expect(res.status).toBe(400);
       expect(res.body).toHaveProperty('error');
     });
 
     it('returns 400 when the request body is missing entirely (no JSON)', async () => {
+      // NOTE: This 400 originates from Express's built-in JSON body-parser
+      // (SyntaxError on empty string), NOT from the route's own `text` validation.
+      // The response body will contain Express's SyntaxError message, not our
+      // custom "Text content is required" message.
       const res = await request(app)
         .post('/api/evaluate')
         .set('Content-Type', 'application/json')
         .send('');
-
-      // Express body-parser treats an empty body as {} → text is undefined → 400
       expect(res.status).toBe(400);
       expect(res.body).toHaveProperty('error');
     });
   });
 
   describe('model error handling', () => {
-    it('returns 500 when the Gemini API throws an error', async () => {
-      _nextError = new Error('Gemini API unavailable');
+    it('returns 500 when the watsonx.ai API throws an error', async () => {
+      _nextError = new Error('watsonx.ai API unavailable');
 
       const res = await request(app)
         .post('/api/evaluate')
@@ -423,11 +419,11 @@ describe('POST /api/evaluate', () => {
 
       expect(res.status).toBe(500);
       expect(res.body).toHaveProperty('error');
-      expect(res.body.error).toMatch(/Gemini API unavailable/i);
+      expect(res.body.error).toMatch(/watsonx\.ai API unavailable/i);
     });
 
     it('returns 500 when the model returns an empty response', async () => {
-      _nextText = null; // response.text will be null → triggers "empty response" error
+      _nextContent = null;
 
       const res = await request(app)
         .post('/api/evaluate')
@@ -439,7 +435,7 @@ describe('POST /api/evaluate', () => {
     });
 
     it('returns 500 when the model returns malformed (non-JSON) text', async () => {
-      _nextText = 'This is definitely not JSON {{{';
+      _nextContent = 'This is definitely not JSON {{{';
 
       const res = await request(app)
         .post('/api/evaluate')
@@ -450,7 +446,7 @@ describe('POST /api/evaluate', () => {
     });
 
     it('returns 502 when the model returns a JSON array instead of an object', async () => {
-      _nextText = JSON.stringify([{ unexpected: 'array response' }]);
+      _nextContent = JSON.stringify([{ unexpected: 'array response' }]);
 
       const res = await request(app)
         .post('/api/evaluate')
@@ -461,7 +457,7 @@ describe('POST /api/evaluate', () => {
     });
 
     it('returns 502 when the model returns a valid JSON object with missing sections key', async () => {
-      _nextText = JSON.stringify({ overall_summary: { novice: 'x', expert: 'x', skeptic: 'x', emotional: 'x' } });
+      _nextContent = JSON.stringify({ overall_summary: { novice: 'x', expert: 'x', skeptic: 'x', emotional: 'x' } });
 
       const res = await request(app)
         .post('/api/evaluate')
@@ -470,36 +466,44 @@ describe('POST /api/evaluate', () => {
       expect(res.status).toBe(502);
       expect(res.body).toHaveProperty('error');
     });
+
+    it('strips markdown code fences and still parses the payload', async () => {
+      _nextContent = '```json\n' + buildValidPayload(2) + '\n```';
+
+      const res = await request(app)
+        .post('/api/evaluate')
+        .send({ text: 'Model wraps output in code fence.' });
+
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body.sections)).toBe(true);
+    });
   });
 
   // ── 4. Mock isolation sanity checks ──────────────────────────────────────
 
   describe('mock isolation', () => {
-    it('does NOT call the real Gemini API (mock is always used)', async () => {
-      _nextText = buildValidPayload(2);
+    it('does NOT call the real watsonx.ai API (mock is always used)', async () => {
+      _nextContent = buildValidPayload(2);
 
-      await request(app)
-        .post('/api/evaluate')
-        .send({ text: 'Any text.' });
+      await request(app).post('/api/evaluate').send({ text: 'Any text.' });
 
-      expect(mockGenerateContent).toHaveBeenCalledTimes(1);
-      // Ensure the real network was never involved by confirming the mock intercepted it
-      const callArg = (mockGenerateContent.mock.calls as unknown[][])[0][0] as Record<string, unknown>;
-      expect(callArg).toHaveProperty('model');
-      expect(callArg).toHaveProperty('contents');
+      expect(mockTextChat).toHaveBeenCalledTimes(1);
+      const callArg = (mockTextChat.mock.calls as unknown[][])[0][0] as Record<string, unknown>;
+      expect(callArg).toHaveProperty('modelId');
+      expect(callArg).toHaveProperty('messages');
     });
 
-    it('forwards the trimmed user text to the model prompt', async () => {
-      _nextText = buildValidPayload(2);
+    it('forwards the trimmed user text to the model messages', async () => {
+      _nextContent = buildValidPayload(2);
       const inputText = '  Hello, world.  ';
 
-      await request(app)
-        .post('/api/evaluate')
-        .send({ text: inputText });
+      await request(app).post('/api/evaluate').send({ text: inputText });
 
-      expect(mockGenerateContent).toHaveBeenCalledTimes(1);
-      const callArg = (mockGenerateContent.mock.calls as unknown[][])[0][0] as Record<string, unknown>;
-      expect(callArg.contents as string).toContain('Hello, world.');
+      expect(mockTextChat).toHaveBeenCalledTimes(1);
+      const callArg = (mockTextChat.mock.calls as unknown[][])[0][0] as Record<string, unknown>;
+      const messages = callArg.messages as Array<{ role: string; content: string }>;
+      const userMsg = messages.find((m) => m.role === 'user');
+      expect(userMsg?.content).toContain('Hello, world.');
     });
   });
 });

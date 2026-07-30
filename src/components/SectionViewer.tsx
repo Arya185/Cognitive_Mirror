@@ -105,7 +105,7 @@ export const SectionViewer: React.FC<SectionViewerProps> = ({
                 <div className="space-y-1.5">
                   <div className="flex items-center space-x-2.5">
                     <span className="font-mono text-xs font-extrabold px-3 py-1 rounded-full bg-blue-100 text-blue-700 border border-blue-200">
-                      §0{section.id}
+                      §{String(section.id).padStart(2, '0')}
                     </span>
                     <span className="text-xs text-slate-400 font-mono font-bold">
                       EXCERPT:

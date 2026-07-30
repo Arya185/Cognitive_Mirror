@@ -6,7 +6,8 @@ import { app } from './src/app.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const PORT = 3000;
+// Read PORT from environment so cloud platforms (Railway, Render, Fly.io, etc.) work correctly
+const PORT = Number(process.env.PORT) || 3000;
 
 // Setup Vite or static serving
 async function startServer() {

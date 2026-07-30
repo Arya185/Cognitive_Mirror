@@ -58,9 +58,7 @@ export interface PersonaInfo {
   name: string;
   role: string;
   heuristic: string;
+  /** Primary brand color hex used for styling (e.g. score bars, labels) */
   color: string;
-  badgeBg: string;
-  badgeText: string;
-  accentBorder: string;
   iconName: string;
 }

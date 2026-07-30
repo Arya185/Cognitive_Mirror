@@ -10,6 +10,7 @@ interface ExportModalProps {
 
 export const ExportModal: React.FC<ExportModalProps> = ({ result, isOpen, onClose }) => {
   const [copied, setCopied] = useState(false);
+  const [copyError, setCopyError] = useState(false);
   const [format, setFormat] = useState<'json' | 'markdown'>('json');
 
   if (!isOpen) return null;
@@ -27,7 +28,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ result, isOpen, onClos
 ## Section Breakdown
 ${result.sections
   .map(
-    (s) => `### Section §0${s.id}: "${s.excerpt}"
+    (s) => `### Section §${String(s.id).padStart(2, '0')}: "${s.excerpt}"
 **Dimensions:** ${s.dimensions.join(', ')} | **Importance:** ${s.importance}/5
 
 ${s.personas
@@ -44,22 +45,38 @@ ${s.personas
 
   const contentToCopy = format === 'json' ? jsonString : markdownString;
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(contentToCopy);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  // Issue #6 fix: await the clipboard Promise and handle failure gracefully
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(contentToCopy);
+      setCopied(true);
+      setCopyError(false);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Clipboard API failed (non-HTTPS, permissions denied, etc.)
+      setCopyError(true);
+      setTimeout(() => setCopyError(false), 2000);
+    }
   };
 
+  // Issue #7 fix: use try/finally so the blob URL is always revoked,
+  // and defer revokeObjectURL so the browser has time to initiate the download.
   const handleDownload = () => {
     const blob = new Blob([contentToCopy], {
       type: format === 'json' ? 'application/json' : 'text/markdown',
     });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `cognitive-mirror-report.${format === 'json' ? 'json' : 'md'}`;
-    a.click();
-    URL.revokeObjectURL(url);
+    try {
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `cognitive-mirror-report.${format === 'json' ? 'json' : 'md'}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } finally {
+      // Defer revoke so the browser can initiate the download first
+      setTimeout(() => URL.revokeObjectURL(url), 100);
+    }
   };
 
   return (
@@ -123,10 +140,12 @@ ${s.personas
           <div className="flex items-center space-x-3">
             <button
               onClick={handleCopy}
-              className="neu-button px-4 py-2 rounded-2xl text-xs font-bold text-slate-700 hover:text-blue-600 transition-colors flex items-center space-x-2 cursor-pointer"
+              className={`neu-button px-4 py-2 rounded-2xl text-xs font-bold transition-colors flex items-center space-x-2 cursor-pointer ${
+                copyError ? 'text-rose-600' : 'text-slate-700 hover:text-blue-600'
+              }`}
             >
               {copied ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4 text-blue-600" />}
-              <span>{copied ? 'Copied to Clipboard' : 'Copy Text'}</span>
+              <span>{copied ? 'Copied to Clipboard' : copyError ? 'Copy Failed' : 'Copy Text'}</span>
             </button>
 
             <button

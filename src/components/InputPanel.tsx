@@ -1,7 +1,7 @@
 import React from 'react';
 import { PRESET_SAMPLES } from '../data/presets';
 import { PresetSample } from '../types';
-import { Sparkles, FileText, ArrowRight, RefreshCw, Terminal, Sliders, Layers } from 'lucide-react';
+import { FileText, ArrowRight, RefreshCw, Terminal, Sliders, Layers, Sparkles } from 'lucide-react';
 
 interface InputPanelProps {
   inputText: string;
