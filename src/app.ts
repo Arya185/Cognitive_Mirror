@@ -4,10 +4,11 @@ import { IamAuthenticator } from '@ibm-cloud/watsonx-ai/authentication';
 import dotenv from 'dotenv';
 import rateLimit from 'express-rate-limit';
 
-dotenv.config();
+dotenv.config({ quiet: true } as any);
 
 export const app = express();
 
+app.set('trust proxy', 1);
 app.use(express.json({ limit: '1mb' }));
 
 // Rate-limit the AI evaluation endpoint to prevent API quota abuse and unexpected billing.
@@ -16,8 +17,8 @@ const evaluateLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
   max: 20,
   standardHeaders: true,
-  legacyHeaders: false,
   message: { error: 'Too many evaluation requests. Please wait a moment before trying again.' },
+  skip: () => process.env.NODE_ENV === 'test',
 });
 
 // Lazy initializer — replaceable in tests via setAiClient()

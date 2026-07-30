@@ -30,7 +30,7 @@ Metacognitive Feedback
 Creator
 ```
 
-> **Design note:** only one AI call is made per evaluation — the IBM Bob (watsonx.ai) call that returns the full structured JSON. Divergence scoring and the Blind Spot Profile are computed entirely on the server-side response with pure arithmetic. This keeps the app fast, deterministic, and credit-efficient.
+> **Design note:** only one AI call is made per evaluation — the IBM Bob (watsonx.ai) call that returns the full structured JSON. Divergence scoring and the Blind Spot Profile are computed entirely client-side, from the server's JSON response with pure arithmetic. This keeps the app fast, deterministic, and credit-efficient.
 
 ---
 

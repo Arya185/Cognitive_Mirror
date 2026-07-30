@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "tsx server.ts",
-    "build": "tsc --noEmit && vite build && esbuild server.ts --bundle --platform=node --format=cjs --external:express --external:@ibm-cloud/watsonx-ai --external:dotenv --external:express-rate-limit --external:vite --sourcemap --outfile=dist/server.cjs",
-    "start": "node dist/server.cjs",
+    "build": "tsc --noEmit && vite build && esbuild server.ts --bundle --platform=node --format=esm --external:express --external:@ibm-cloud/watsonx-ai --external:dotenv --external:express-rate-limit --external:vite --sourcemap --outfile=dist/server.mjs",
+    "start": "cross-env NODE_ENV=production node dist/server.mjs",
     "clean": "rm -rf dist server.js",
     "lint": "tsc --noEmit",
     "test": "vitest run",

@@ -1,7 +1,7 @@
 import React from 'react';
 import { EvaluationResult } from '../types';
 import { PERSONA_CONFIGS } from '../data/presets';
-import { Activity, Gauge } from 'lucide-react';
+import { Gauge } from 'lucide-react';
 
 interface PersonaMetricsProps {
   result: EvaluationResult;

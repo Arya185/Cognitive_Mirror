@@ -1,5 +1,5 @@
 import React from 'react';
-import { Eye, BookOpen, Activity, Sparkles } from 'lucide-react';
+import { Eye, BookOpen, Activity, RotateCcw } from 'lucide-react';
 
 interface HeaderProps {
   onReset?: () => void;
