@@ -1,112 +1,193 @@
 # Cognitive Mirror
 
-**Train your creative judgment, not just your writing.**
+Creative writing analysis app that runs one IBM watsonx.ai evaluation, then computes disagreement and blind-spot signals client-side.
 
-Most AI writing tools rewrite or polish your draft. Cognitive Mirror does something different: it reads your text as four fundamentally different kinds of reader simultaneously — and shows you exactly where they disagree. A novelist, a domain expert, a logical skeptic, and a purely emotional reactor will each experience your pitch, lyric, or story opening differently. The places where they diverge the most are where your writing is either doing something genuinely interesting, or quietly failing people you didn't expect. Cognitive Mirror makes that invisible gap visible.
+## What app does
 
----
+Paste short-form writing, run evaluation, inspect how four reader lenses disagree:
 
-## Pipeline
+- `novice` checks clarity and accessibility
+- `expert` judges craft, structure, and originality
+- `skeptic` hunts for logical gaps and unearned beats
+- `emotional` reports raw felt reaction with fixed emotion label
 
+App returns:
+
+- section-by-section persona scores, confidence, notes, and emotional tag
+- per-persona overall summaries
+- divergence metrics per section
+- blind-spot severity by dimension
+- automatic blind-spot alerts
+- export as `JSON` or `Markdown`
+
+## Architecture
+
+```text
+React + Vite UI
+      |
+      v
+POST /api/evaluate (Express)
+      |
+      v
+IBM watsonx.ai `ibm/granite-3-8b-instruct`
+      |
+      v
+Structured JSON response
+      |
+      +--> client-side section divergence stats
+      +--> client-side blind-spot profile
+      +--> client-side alert detection
 ```
-Creator Input
-     │
-     ▼
-Cognitive Persona Engine (IBM watsonx.ai — Granite)
-     │  Single structured-JSON call: 4 personas × N sections
-     ▼
-Persona Responses
-     │  { sections[], overall_summary }
-     ▼
-Divergence Analyzer          ← client-side, deterministic
-     │  std-dev per section, range, friction hotspots
-     ▼
-Blind Spot Detector          ← client-side, deterministic
-     │  per-dimension severity % (no extra model calls)
-     ▼
-Metacognitive Feedback
-     │  Divergence Spectrogram · Blind Spot Profile · Section Deep-Dive
-     ▼
-Creator
+
+Important behavior:
+
+- one model call per evaluation
+- input limited to `10,000` characters
+- `/api/evaluate` rate-limited to `20` requests per minute per IP
+- input JSON body limited to `1mb`
+- health check at `/api/health`
+
+## Tech stack
+
+- React 19
+- Vite 6
+- Express 4
+- TypeScript
+- IBM watsonx.ai Node SDK
+- Vitest
+
+## Project structure
+
+```text
+src/App.tsx                     main UI flow
+src/app.ts                      Express app and `/api/evaluate`
+server.ts                       dev/prod server bootstrap
+src/components/                 dashboard, input, export, section views
+src/lib/sectionStats.ts         divergence math
+src/lib/blindSpotProfile.ts     blind-spot severity math
+src/data/presets.ts             persona config, dimensions, sample presets
+src/__tests__/                  API and pure-function tests
 ```
-
-> **Design note:** only one AI call is made per evaluation — the IBM Bob (watsonx.ai) call that returns the full structured JSON. Divergence scoring and the Blind Spot Profile are computed entirely client-side, from the server's JSON response with pure arithmetic. This keeps the app fast, deterministic, and credit-efficient.
-
----
-
-## Powered by IBM watsonx.ai
-
-This project was built for the **IBM Bob AI Builders Challenge (July 2025)**. The Cognitive Persona Engine runs on **IBM watsonx.ai** using the `ibm/granite-3-8b-instruct` foundation model. The model is called via the `@ibm-cloud/watsonx-ai` Node.js SDK with `guidedJSON` structured output to enforce the response schema at the model level.
-
-**IBM SkillsBuild / Bob learning activity completed:** *(team member — fill in the activity name and completion date here before submission)*
-
----
 
 ## Setup
 
 ### Prerequisites
 
 - Node.js 18+
-- An [IBM Cloud account](https://cloud.ibm.com/) with a watsonx.ai project
+- IBM Cloud account with watsonx.ai project
 
 ### Environment variables
 
-Copy `.env.example` to `.env` and fill in your credentials:
+Copy `.env.example` to `.env`:
 
 ```bash
 cp .env.example .env
 ```
 
-```
+Set:
+
+```bash
 WATSONX_API_KEY=your_ibm_cloud_api_key_here
 WATSONX_PROJECT_ID=your_watsonx_project_id_here
-# Optional (defaults to us-south):
-# WATSONX_SERVICE_URL=https://us-south.ml.cloud.ibm.com
 ```
 
-You can find your project ID in the watsonx.ai console under **Manage → General → Project ID**.
+Optional:
 
-### Install and run
+```bash
+WATSONX_SERVICE_URL=https://us-south.ml.cloud.ibm.com
+```
+
+## Scripts
 
 ```bash
 npm install
-
-# Development (Vite HMR + Express API server on :3000)
 npm run dev
-
-# Production build
-npm run build
-
-# Serve production build
-npm start
 ```
 
----
+`npm run dev` starts single Node process from `server.ts`. In development, Express mounts Vite middleware and serves UI + API on same port, default `3000`.
 
-## How to use it
-
-1. **Paste your text** — story opening, pitch, lyric, or tagline — into the input area, or pick one of the four built-in sample presets.
-2. **Click "Run Cognitive Evaluation"** — a single IBM Bob call analyses the text and returns structured per-section scores for all four personas.
-3. **Read the Persona Mean Telemetry** — at a glance: how did each lens rate the piece overall?
-4. **Scan the Divergence Spectrogram** — each section gets a needle chart showing where the four personas landed. Clustered needles = consensus. Wide-spread needles = friction.
-5. **Click a friction hotspot** — the section scrolls into focus in the Deep-Dive Telemetry panel below, where you can read each persona's specific note and confidence score.
-6. **Read the Blind Spot Profile** — five horizontal bars show *which cognitive dimensions* attracted the most cross-persona disagreement. A high `ASSUMED KNOWLEDGE` bar, for example, means your expert loved it but your novice was left behind. This is the part no AI writing tool will tell you.
-7. **Check the Blind Spot Alerts** — three automatically-detected disconnect patterns: assumed knowledge gap, unearned polish, and visceral flatness despite clarity.
-8. **Export** — download the full evaluation as JSON or Markdown for your own notes.
-
----
-
-## Development
+Other scripts:
 
 ```bash
-# Type-check only (no emit)
-npm run lint
-
-# Run unit tests (Vitest, no live credentials needed — mocked)
-npm test
-
-# Watch mode
-npm run test:watch
+npm run build       # type-check, build client, bundle server to dist/server.mjs
+npm start           # serve production build
+npm run lint        # TypeScript check only
+npm test            # Vitest run
+npm run test:watch  # Vitest watch mode
 ```
 
-Tests live in `src/__tests__/`. The API route test (`evaluate.test.ts`) fully mocks the watsonx.ai SDK. The pure-function test (`blindSpotProfile.test.ts`) tests the divergence-to-severity computation with no dependencies.
+## How to use
+
+1. Open app.
+2. Paste text or load one of four built-in presets: story opening, pitch, lyric, tagline.
+3. Click `Run Cognitive Evaluation`.
+4. Review `Persona Mean Telemetry` for average score and confidence per lens.
+5. Review `Cognitive Divergence Spectrogram` for spread, standard deviation, and friction hotspots per section.
+6. Review `Blind Spot Profile` for disagreement severity across `assumed_knowledge`, `clarity`, `emotional_calibration`, `logical_coherence`, and `originality`.
+7. Review `Cognitive Blind Spot Detection` alerts for:
+   - assumed knowledge gap
+   - unearned polish / logical gap
+   - clear but viscerally flat
+8. Use `Sectional Deep-Dive Telemetry` to inspect notes, confidence, and emotional labels per section.
+9. Export report as `JSON` or `Markdown`.
+
+## API
+
+### `POST /api/evaluate`
+
+Request:
+
+```json
+{
+  "text": "Your writing sample here"
+}
+```
+
+Validation:
+
+- `text` required
+- `text` must be string
+- trimmed text must be non-empty
+- trimmed text must be under `10,000` characters
+
+Response shape:
+
+```json
+{
+  "sections": [
+    {
+      "id": 1,
+      "excerpt": "First ~10 words",
+      "dimensions": ["clarity", "originality"],
+      "importance": 4,
+      "personas": [
+        {
+          "id": "novice",
+          "score": 3,
+          "confidence": 0.82,
+          "note": "Readable but jargon slows entry."
+        }
+      ]
+    }
+  ],
+  "overall_summary": {
+    "novice": "...",
+    "expert": "...",
+    "skeptic": "...",
+    "emotional": "..."
+  }
+}
+```
+
+## Testing
+
+Current tests cover:
+
+- API route behavior with mocked watsonx client
+- blind-spot profile computation
+
+Run:
+
+```bash
+npm test
+```
