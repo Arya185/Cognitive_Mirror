@@ -24,6 +24,7 @@ export const InputPanel: React.FC<InputPanelProps> = ({
 }) => {
   const wordCount = inputText.trim() ? inputText.trim().split(/\s+/).length : 0;
   const paragraphCount = inputText.trim() ? inputText.split(/\n\s*\n/).filter(Boolean).length : 0;
+  const displayedSectionCount = inputText.trim() ? paragraphCount || 1 : 0;
 
   return (
     <div className="neu-card rounded-3xl p-6 sm:p-8 space-y-6">
@@ -50,7 +51,7 @@ export const InputPanel: React.FC<InputPanelProps> = ({
           </div>
           <div className="w-px h-3 bg-slate-300" />
           <div className="flex items-center space-x-1">
-            <span className="text-slate-900 font-bold">{paragraphCount || 1}</span>
+            <span className="text-slate-900 font-bold">{displayedSectionCount}</span>
             <span className="text-slate-400">SECTIONS</span>
           </div>
         </div>

@@ -51,11 +51,11 @@ export default function App() {
       if (data.sections.length > 0) {
         setSelectedSectionId(data.sections[0].id);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Cognitive Mirror error:', err);
       setResult(null);
       setSelectedSectionId(null);
-      setError(err.message || 'An unexpected error occurred during analysis.');
+      setError(err instanceof Error ? err.message : 'An unexpected error occurred during analysis.');
     } finally {
       setIsLoading(false);
     }
@@ -65,6 +65,7 @@ export default function App() {
     setResult(null);
     setSelectedSectionId(null);
     setError(null);
+    setIsExportOpen(false);
   };
 
   return (
