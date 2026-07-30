@@ -71,22 +71,21 @@ export const InputPanel: React.FC<InputPanelProps> = ({
                 key={preset.id}
                 type="button"
                 onClick={() => onSelectPreset(preset)}
-                className={`p-4 rounded-2xl text-left transition-all cursor-pointer flex flex-col justify-between h-full font-sans ${
+                className={`min-h-[104px] p-3 rounded-2xl text-left transition-all cursor-pointer font-sans flex items-start ${
                   isSelected
                     ? 'bg-blue-50/80 border-2 border-blue-500 shadow-[inset_2px_2px_5px_rgba(37,99,235,0.1)] text-slate-900'
                     : 'neu-button text-slate-600 hover:text-slate-900'
                 }`}
               >
-                <div>
-                  <span className={`inline-block font-mono text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full mb-2 ${
+                <div className="space-y-1.5">
+                  <span className={`inline-block font-mono text-[9px] font-bold uppercase tracking-[0.22em] px-2 py-0.5 rounded-full ${
                     isSelected ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600 border border-slate-200'
                   }`}>
                     {preset.category}
                   </span>
-                  <div className="font-bold text-xs text-slate-900 line-clamp-1">{preset.title}</div>
-                </div>
-                <div className="text-[11px] text-slate-500 mt-2 line-clamp-2 font-sans leading-relaxed">
-                  {preset.description}
+                  <div className="font-bold text-sm text-slate-900 leading-tight line-clamp-2">
+                    {preset.title}
+                  </div>
                 </div>
               </button>
             );

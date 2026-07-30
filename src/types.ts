@@ -48,7 +48,7 @@ export interface EvaluationResult {
 export interface PresetSample {
   id: string;
   title: string;
-  category: 'Story Opening' | 'Pitch' | 'Lyric' | 'Tagline';
+  category: 'Story' | 'Pitch' | 'Lyric' | 'Tagline';
   text: string;
   description: string;
 }
