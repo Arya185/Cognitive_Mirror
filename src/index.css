@@ -1,0 +1,102 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+@theme {
+  --color-bg: #F0F4F8;
+  --color-surface: #FFFFFF;
+  --color-surface-soft: #F8FAFC;
+  --color-border: #E2E8F0;
+  
+  --color-text-primary: #0F172A;
+  --color-text-secondary: #475569;
+  --color-text-muted: #64748B;
+
+  --color-novice: #2563EB;       /* vibrant blue */
+  --color-expert: #7C3AED;       /* violet/purple */
+  --color-skeptic: #D97706;      /* amber/orange */
+  --color-emotional: #E11D48;    /* rose/coral */
+
+  --font-sans: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Custom Neumorphic Shadow Utilities */
+.neu-card {
+  background: #FFFFFF;
+  box-shadow: 8px 8px 20px rgba(180, 195, 215, 0.45), -8px -8px 20px #FFFFFF;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+}
+
+.neu-card-hover {
+  transition: all 0.25s ease-in-out;
+}
+.neu-card-hover:hover {
+  box-shadow: 12px 12px 28px rgba(180, 195, 215, 0.6), -12px -12px 28px #FFFFFF;
+  transform: translateY(-2px);
+}
+
+.neu-inset {
+  background: #F0F4F8;
+  box-shadow: inset 3px 3px 6px rgba(180, 195, 215, 0.5), inset -3px -3px 6px #FFFFFF;
+  border: 1px solid rgba(226, 232, 240, 0.6);
+}
+
+.neu-button {
+  background: #FFFFFF;
+  box-shadow: 4px 4px 10px rgba(180, 195, 215, 0.4), -4px -4px 10px #FFFFFF;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  transition: all 0.2s ease;
+}
+.neu-button:hover {
+  box-shadow: 6px 6px 14px rgba(180, 195, 215, 0.55), -6px -6px 14px #FFFFFF;
+  transform: translateY(-1px);
+}
+.neu-button:active {
+  box-shadow: inset 2px 2px 5px rgba(180, 195, 215, 0.4), inset -2px -2px 5px #FFFFFF;
+  transform: translateY(0);
+}
+
+.neu-button-active {
+  background: #EFF6FF;
+  box-shadow: inset 2px 2px 5px rgba(180, 195, 215, 0.3), inset -2px -2px 5px #FFFFFF;
+  border: 1px solid #3B82F6;
+  color: #2563EB;
+}
+
+.neu-button-primary {
+  background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+  box-shadow: 4px 4px 12px rgba(37, 99, 235, 0.35), -4px -4px 12px #FFFFFF;
+  color: #FFFFFF;
+  transition: all 0.2s ease;
+}
+.neu-button-primary:hover {
+  box-shadow: 6px 6px 16px rgba(37, 99, 235, 0.45), -6px -6px 16px #FFFFFF;
+  transform: translateY(-1px);
+}
+.neu-button-primary:active {
+  box-shadow: inset 2px 2px 4px rgba(0, 0, 0, 0.2);
+  transform: translateY(0);
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #F0F4F8;
+}
+::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
+}
