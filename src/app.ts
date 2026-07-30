@@ -335,7 +335,7 @@ export async function evaluateText(text: string, client: TextChatClient = getWat
   }
 
   const response = await client.textChat({
-    modelId: 'ibm/granite-3-8b-instruct',
+    modelId: 'ibm/granite-3-3-8b-instruct',
     projectId,
     guidedJSON: RESPONSE_SCHEMA,
     messages: [
