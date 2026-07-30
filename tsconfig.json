@@ -1,26 +1,44 @@
 {
   "compilerOptions": {
+    // 1. Runtime Environment & JSX
     "target": "ES2022",
-    "experimentalDecorators": true,
-    "useDefineForClassFields": false,
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
+
+    // 2. Module System & Resolution
     "module": "ESNext",
-    "lib": [
-      "ES2022",
-      "DOM",
-      "DOM.Iterable"
-    ],
-    "skipLibCheck": true,
     "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "paths": {
+      "@/*": ["./*"]
+    },
+
+    // 3. Interoperability & Compatibility
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "allowJs": true,
+    "skipLibCheck": true,
+
+    // 4. Type Safety & Compiler Strictness
+    "strict": true,
     "isolatedModules": true,
     "moduleDetection": "force",
-    "allowJs": true,
-    "jsx": "react-jsx",
-    "paths": {
-      "@/*": [
-        "./*"
-      ]
-    },
-    "allowImportingTsExtensions": true,
+
+    // 5. External Type Definitions
+    "types": [
+      "vite/client",
+      "node",
+      "react",
+      "react-dom"
+    ],
+
+    // 6. Build Output (no emission)
     "noEmit": true
-  }
+  },
+
+  // 7. Files to include
+  "include": [
+    "**/*.ts",
+    "**/*.tsx"
+  ]
 }
