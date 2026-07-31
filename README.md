@@ -1,7 +1,8 @@
-# Cognitive Mirror
+# Cognitive_Mirror
 
-**Train your creative judgment, not just your writing.**
+## Production deployment notes
 
+<<<<<<< HEAD
 Cognitive Mirror does not generate replacement copy or rewrite your draft for you. It takes your story opening, startup pitch, lyric, or brand tagline, runs one structured IBM watsonx.ai evaluation across four distinct reader lenses, and shows where those lenses agree, clash, and expose blind spots you would likely miss on your own.
 
 <!--
@@ -186,3 +187,17 @@ This project is licensed under the **MIT License**. See [LICENSE.md](LICENSE.md)
 ## Acknowledgements
 
 Built with [IBM watsonx.ai](https://www.ibm.com/watsonx) and the Granite model family (`ibm/granite-3-3-8b-instruct`).
+=======
+- The app runs as an Express server with a Vite-built frontend.
+- Set the backend environment variables before deployment:
+  - WATSONX_API_KEY
+  - WATSONX_PROJECT_ID
+  - WATSONX_SERVICE_URL=https://us-south.ml.cloud.ibm.com
+  - NODE_ENV=production
+  - PORT=3000
+  - CORS_ALLOWED_ORIGINS=https://your-frontend-domain.example.com,http://localhost:5173
+  - VITE_API_BASE_URL=https://your-backend-domain.example.com
+- The backend health check is available at /health.
+- For Render, use the included Render configuration and start command: npm start.
+- For Vercel, deploy the frontend build and point VITE_API_BASE_URL at the deployed backend URL.
+>>>>>>> 44e8f14 (Update project)

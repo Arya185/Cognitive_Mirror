@@ -22,14 +22,11 @@ export const BlindSpotAlerts: React.FC<BlindSpotAlertsProps> = ({ result }) => {
 
     if (!novice || !expert || !skeptic || !emotional) return;
 
-    // Format section ID safely (handles IDs >= 10 correctly)
-    const sid = `\u00a7${String(section.id).padStart(2, '0')}`;
-
     // 1. Assumed Knowledge Gap (Expert high, Novice low)
     if (expert.score >= 4 && novice.score <= 2) {
       alerts.push({
         type: 'danger',
-        title: `ASSUMED KNOWLEDGE GAP (${sid})`,
+        title: `ASSUMED KNOWLEDGE GAP (§0${section.id})`,
         description: `Expert rates this highly (${expert.score}/5), but Novice is confused (${novice.score}/5). Unexplained domain context or insider jargon creates friction.`,
         sectionIds: [section.id],
       });
@@ -39,7 +36,7 @@ export const BlindSpotAlerts: React.FC<BlindSpotAlertsProps> = ({ result }) => {
     if (expert.score >= 4 && skeptic.score <= 2) {
       alerts.push({
         type: 'warning',
-        title: `UNEARNED POLISH / LOGICAL GAP (${sid})`,
+        title: `UNEARNED POLISH / LOGICAL GAP (§0${section.id})`,
         description: `Expert appreciates craft technique (${expert.score}/5), but Skeptic flags unearned emotional beats or logical flaws (${skeptic.score}/5).`,
         sectionIds: [section.id],
       });
@@ -50,11 +47,10 @@ export const BlindSpotAlerts: React.FC<BlindSpotAlertsProps> = ({ result }) => {
       novice.score >= 4 &&
       (emotional.emotion === 'bored' || emotional.emotion === 'flat' || emotional.score <= 2)
     ) {
-      const emotionLabel = emotional.emotion ?? 'neutral';
       alerts.push({
         type: 'info',
-        title: `CLEAR BUT VISCERALLY FLAT (${sid})`,
-        description: `Novice finds this readable (${novice.score}/5), but Emotional Reader reports a "${emotionLabel}" reaction (${emotional.score}/5).`,
+        title: `CLEAR BUT VISCERALLY FLAT (§0${section.id})`,
+        description: `Novice finds this readable (${novice.score}/5), but Emotional Reader reports a "${emotional.emotion}" reaction (${emotional.score}/5).`,
         sectionIds: [section.id],
       });
     }
@@ -85,10 +81,9 @@ export const BlindSpotAlerts: React.FC<BlindSpotAlertsProps> = ({ result }) => {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
-          {alerts.map((alert) => (
+          {alerts.map((alert, idx) => (
             <div
-              // Issue #21 fix: use a stable key derived from alert content instead of array index
-              key={`${alert.type}-${alert.sectionIds.join('-')}-${alert.title.slice(0, 20)}`}
+              key={idx}
               className={`p-4 rounded-2xl border text-xs space-y-2 flex flex-col justify-between shadow-xs ${
                 alert.type === 'danger'
                   ? 'bg-rose-50/80 border-rose-200 text-rose-900'
