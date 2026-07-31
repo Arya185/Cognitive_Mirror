@@ -178,6 +178,9 @@ src/__tests__/                  helper and math tests
 
 ## License
 
+This project is licensed under the **MIT License**. See [LICENSE.md](LICENSE.md) for the full text.
+
+
 <!-- Add a LICENSE file to the repo root and name it here, e.g.: This project is licensed under the MIT License. See LICENSE for details. -->
 
 ## Acknowledgements
