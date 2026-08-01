@@ -1,5 +1,4 @@
-import { WatsonXAI } from "@ibm-cloud/watsonx-ai";
-import { IamAuthenticator } from "ibm-cloud-sdk-core";
+import Replicate from "replicate";
 
 export function buildEvaluationResponseSchema() {
   return {
@@ -195,22 +194,48 @@ export function selectPreferredGraniteModel(
   return candidates[0] ?? null;
 }
 
-async function resolveGraniteModelId(watsonx: WatsonXAI): Promise<string> {
-  const modelsResponse = await watsonx.listFoundationModelSpecs({
-    limit: 200,
-  });
-
-  const candidates = selectPreferredGraniteModel(
-    (modelsResponse?.result?.resources ?? []) as FoundationModelCandidate[],
-  );
-
-  if (!candidates) {
-    throw new Error(
-      "No available Granite foundation model was returned by the IBM watsonx.ai service for this project.",
-    );
+function extractReplicateText(response: unknown): string {
+  if (typeof response === "string") {
+    return response;
   }
 
-  return candidates;
+  if (Array.isArray(response)) {
+    const joinedText = response
+      .filter((item): item is string => typeof item === "string")
+      .join("");
+
+    if (joinedText) {
+      return joinedText;
+    }
+  }
+
+  if (response && typeof response === "object") {
+    const record = response as Record<string, unknown>;
+
+    if (typeof record.text === "string") {
+      return record.text;
+    }
+
+    if (typeof record.generated_text === "string") {
+      return record.generated_text;
+    }
+
+    if (typeof record.output === "string") {
+      return record.output;
+    }
+
+    if (Array.isArray(record.output)) {
+      const joinedText = record.output
+        .filter((item): item is string => typeof item === "string")
+        .join("");
+
+      if (joinedText) {
+        return joinedText;
+      }
+    }
+  }
+
+  throw new Error("Replicate returned an unexpected response shape.");
 }
 
 export async function evaluateTextWithWatsonx(
@@ -226,46 +251,34 @@ export async function evaluateTextWithWatsonx(
     buildUserPrompt(text),
   ].join("\n\n");
 
-  const watsonx = new WatsonXAI({
-    version: "2024-05-31",
-    serviceUrl: serviceUrl.replace(/\/$/, ""),
-    authenticator: new IamAuthenticator({ apikey: apiKey }),
+  const replicate = new Replicate({
+    auth: process.env.REPLICATE_API_TOKEN,
   });
 
-  let modelId: string;
+  let responseText: string;
   try {
-    modelId = await resolveGraniteModelId(watsonx);
-  } catch (error) {
-    throw new Error(
-      error instanceof Error
-        ? error.message
-        : "IBM watsonx.ai model lookup failed.",
-    );
-  }
-
-  let response;
-  try {
-    response = await watsonx.generateText({
-      input: prompt,
-      modelId,
-      projectId,
-      parameters: {
-        decoding_method: "greedy",
-        max_new_tokens: 2048,
-        temperature: 0.7,
+    const response = await replicate.run(
+      "ibm-granite/granite-3.3-8b-instruct",
+      {
+        input: {
+          prompt,
+          max_new_tokens: 2048,
+          temperature: 0.7,
+        },
       },
-    });
+    );
+
+    responseText = extractReplicateText(response);
   } catch (error) {
     if (error instanceof Error) {
-      throw new Error(`IBM watsonx.ai request failed: ${error.message}`);
+      throw new Error(`Replicate request failed: ${error.message}`);
     }
 
-    throw new Error("IBM watsonx.ai request failed.");
+    throw new Error("Replicate request failed.");
   }
 
-  const responseText = response?.result?.results?.[0]?.generated_text;
-  if (!responseText) {
-    throw new Error("IBM watsonx.ai returned an empty response.");
+  if (!responseText.trim()) {
+    throw new Error("Replicate returned an empty response.");
   }
 
   try {
@@ -273,7 +286,7 @@ export async function evaluateTextWithWatsonx(
   } catch {
     const jsonMatch = responseText.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
-      throw new Error("IBM watsonx.ai response was not valid JSON.");
+      throw new Error("Replicate response was not valid JSON.");
     }
 
     return JSON.parse(jsonMatch[0]);
