@@ -28,9 +28,10 @@ app.use(express.json({ limit: "1mb" }));
 // Read allowed origins from environment (comma-separated).
 // No hardcoded fallback – if undefined, only localhost is allowed.
 const allowedOrigins = new Set(
-  process.env.ALLOWED_ORIGINS
-    ? process.env.ALLOWED_ORIGINS.split(",").map((o) => o.trim())
-    : []
+  (process.env.CORS_ALLOWED_ORIGINS || "")
+    .split(",")
+    .map((o) => o.trim())
+    .filter(Boolean)
 );
 
 app.use(
