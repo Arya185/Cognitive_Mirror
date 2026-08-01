@@ -1,13 +1,7 @@
 # Cognitive_Mirror
 
 ## Production deployment notes
-Cognitive Mirror does not generate replacement copy or rewrite your draft for you. It takes your story opening, startup pitch, lyric, or brand tagline, runs one structured IBM watsonx.ai evaluation across four distinct reader lenses, and shows where those lenses agree, clash, and expose blind spots you would likely miss on your own.
-
-<!--
-Demo GIF / Screenshot
-Add a short GIF or screenshot of the divergence view + blind spot profile here, e.g.:
-![Cognitive Mirror demo](docs/demo.gif)
--->
+Cognitive Mirror does not generate replacement copy or rewrite your draft for you. It takes your story opening, startup pitch, lyric, or brand tagline, runs one structured OpenRouter evaluation across four distinct reader lenses, and shows where those lenses agree, clash, and expose blind spots you would likely miss on your own.
 
 ## Features
 
@@ -18,7 +12,7 @@ Add a short GIF or screenshot of the divergence view + blind spot profile here, 
 - Interactive divergence visualization
 - Section-by-section analysis
 - Export results as JSON or Markdown
-- Single IBM watsonx.ai inference per evaluation
+- Single OpenRouter inference per evaluation
 
 ## Why Cognitive Mirror?
 
@@ -35,30 +29,18 @@ The goal is not to tell creators what to write, but to help them understand **ho
 
 By comparing these perspectives, Cognitive Mirror reveals cognitive blind spots that are difficult to notice when writing alone.
 
-Cognitive Mirror can support creators across different creative domains, including:
-
-- Creative writing
-- Startup pitch decks
-- Marketing copy
-- Brand messaging
-- Song lyrics
-- Storytelling
-- Educational writing
-
-Rather than replacing human creativity, the system encourages reflection by exposing multiple cognitive perspectives on the same work.
-
 ## Pipeline
 
 ```text
 Creator Input
-  -> Cognitive Persona Engine (IBM watsonx.ai / Granite)
+  -> Cognitive Persona Engine (OpenRouter / IBM Granite 4.1 8B)
   -> Persona Responses
   -> Divergence Analyzer
   -> Blind Spot Detector
   -> Metacognitive Feedback
 ```
 
-A single IBM watsonx.ai evaluation produces structured feedback from all four personas in one call. Divergence analysis, blind spot detection, confidence aggregation, and visualization are all computed locally afterward, making the system efficient, deterministic, and cost-effective.
+A single OpenRouter evaluation produces structured feedback from all four personas in one call. Divergence analysis, blind spot detection, confidence aggregation, and visualization are all computed locally afterward, making the system efficient, deterministic, and cost-effective.
 
 ## Product Flow
 
@@ -87,7 +69,7 @@ React + Vite UI
 POST /api/evaluate (Express)
       │
       ▼
-IBM watsonx.ai `ibm/granite-3-3-8b-instruct`
+OpenRouter `ibm/granite-4.1-8b`
       │
       ▼
 Validated structured JSON
@@ -112,18 +94,18 @@ Implementation details:
 
 **Frontend:** React, Vite, Tailwind CSS, lucide-react
 
-**Backend:** Express, `@ibm-cloud/watsonx-ai`, express-rate-limit, dotenv
+**Backend:** Express, dotenv
 
 **Tooling:** TypeScript, Vitest, tsx, esbuild
 
-**Model:** IBM watsonx.ai — `ibm/granite-3-3-8b-instruct`
+**Model:** OpenRouter — `ibm/granite-4.1-8b`
 
 ## Setup
 
 ### Prerequisites
 
 - Node.js 18+
-- IBM Cloud account with a watsonx.ai project
+- OpenRouter API key
 
 ### Environment
 
@@ -134,14 +116,7 @@ cp .env.example .env
 Set:
 
 ```bash
-WATSONX_API_KEY=your_ibm_cloud_api_key_here
-WATSONX_PROJECT_ID=your_watsonx_project_id_here
-```
-
-Optional:
-
-```bash
-WATSONX_SERVICE_URL=https://eu-de.ml.cloud.ibm.com
+OPENROUTER_API_KEY=your_openrouter_api_key_here
 ```
 
 ### Install and Run
@@ -166,7 +141,7 @@ npm start
 
 ```text
 src/App.tsx                     main UI flow
-src/app.ts                      Express API route and IBM watsonx integration
+src/app.ts                      Express API route and OpenRouter integration
 server.ts                       dev/prod server bootstrap
 src/components/                 dashboard, input, export, section views
 src/lib/sectionStats.ts         divergence math
@@ -181,15 +156,13 @@ This project is licensed under the **MIT License**. See [LICENSE.md](LICENSE.md)
 
 ## Acknowledgements
 
-Cognitive Mirror is powered by **IBM watsonx.ai** and the **Granite** family of foundation models.
+Cognitive Mirror is powered by **OpenRouter** and the **IBM Granite 4.1 8B** model.
 
 Built using:
 
-- IBM watsonx.ai
-- IBM Granite (`ibm/granite-3-3-8b-instruct`)
+- OpenRouter
+- IBM Granite (`ibm/granite-4.1-8b`)
 - React
 - Vite
 - Express
 - TypeScript
-
-Special thanks to IBM for providing the watsonx.ai platform and Granite models that enable structured cognitive analysis through a single inference.

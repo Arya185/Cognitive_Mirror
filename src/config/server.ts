@@ -8,7 +8,7 @@ export interface ServerConfig {
   nodeEnv: NodeEnv;
   port: number;
   corsAllowedOrigins: string[];
-  replicateApiToken?: string;
+  openRouterApiKey?: string;
   apiBaseUrl?: string;
 }
 
@@ -55,7 +55,7 @@ export function getServerConfig(): ServerConfig {
       process.env.CORS_ALLOWED_ORIGINS,
       nodeEnv,
     ),
-    replicateApiToken: process.env.REPLICATE_API_TOKEN,
+    openRouterApiKey: process.env.OPENROUTER_API_KEY,
     apiBaseUrl: process.env.VITE_API_BASE_URL?.replace(/\/$/, ""),
   };
 }
@@ -63,8 +63,8 @@ export function getServerConfig(): ServerConfig {
 export function validateServerEnv(config: ServerConfig): string[] {
   const missing: string[] = [];
 
-  if (!config.replicateApiToken) {
-    missing.push("REPLICATE_API_TOKEN");
+  if (!config.openRouterApiKey) {
+    missing.push("OPENROUTER_API_KEY");
   }
 
   return missing;

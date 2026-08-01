@@ -1,5 +1,3 @@
-import Replicate from "replicate";
-
 export function buildEvaluationResponseSchema() {
   return {
     type: "object",
@@ -147,141 +145,76 @@ export function buildUserPrompt(text: string) {
   return `INPUT TEXT:\n"""\n${text.trim()}\n"""`;
 }
 
-type FoundationModelCandidate = {
-  model_id?: string;
-  lifecycle?: Array<{ id?: string }>;
-};
-
-function rankGraniteModelId(modelId: string): number {
-  const normalized = modelId.toLowerCase();
-
-  if (normalized.includes("granite-4")) return 4;
-  if (normalized.includes("granite-3")) return 3;
-  if (normalized.includes("granite-2")) return 2;
-  if (normalized.includes("granite")) return 1;
-
-  return 0;
-}
-
-function isGraniteModelId(modelId: string): boolean {
-  return modelId.toLowerCase().includes("granite");
-}
-
-function isAvailableModel(resource: FoundationModelCandidate): boolean {
-  const lifecycleStates = resource.lifecycle ?? [];
-  return lifecycleStates.every((state) => state.id !== "withdrawn");
-}
-
-export function selectPreferredGraniteModel(
-  resources: FoundationModelCandidate[],
-): string | null {
-  const candidates = resources
-    .filter((resource) => {
-      const modelId = resource.model_id;
-      return typeof modelId === "string" && isGraniteModelId(modelId);
-    })
-    .filter((resource) => isAvailableModel(resource))
-    .map((resource) => resource.model_id as string)
-    .sort((left, right) => {
-      const rankDelta = rankGraniteModelId(right) - rankGraniteModelId(left);
-      if (rankDelta !== 0) {
-        return rankDelta;
-      }
-
-      return right.localeCompare(left);
-    });
-
-  return candidates[0] ?? null;
-}
-
-function extractReplicateText(response: unknown): string {
-  if (typeof response === "string") {
-    return response;
-  }
-
-  if (Array.isArray(response)) {
-    const joinedText = response
-      .filter((item): item is string => typeof item === "string")
-      .join("");
-
-    if (joinedText) {
-      return joinedText;
-    }
-  }
-
-  if (response && typeof response === "object") {
-    const record = response as Record<string, unknown>;
-
-    if (typeof record.text === "string") {
-      return record.text;
-    }
-
-    if (typeof record.generated_text === "string") {
-      return record.generated_text;
-    }
-
-    if (typeof record.output === "string") {
-      return record.output;
-    }
-
-    if (Array.isArray(record.output)) {
-      const joinedText = record.output
-        .filter((item): item is string => typeof item === "string")
-        .join("");
-
-      if (joinedText) {
-        return joinedText;
-      }
-    }
-  }
-
-  throw new Error("Replicate returned an unexpected response shape.");
-}
-
-export async function evaluateTextWithWatsonx(text: string) {
+export async function evaluateText(text: string) {
   const schema = buildEvaluationResponseSchema();
+
   const prompt = [
     buildSystemInstruction(),
-    `Return valid JSON only. The schema must match this structure: ${JSON.stringify(schema)}`,
+    `Return ONLY valid JSON matching this schema: ${JSON.stringify(schema)}`,
     buildUserPrompt(text),
   ].join("\n\n");
 
-  const replicate = new Replicate({
-    auth: process.env.REPLICATE_API_TOKEN,
-  });
+  const apiKey = process.env.OPENROUTER_API_KEY;
 
-  let responseText: string;
-  try {
-    const response = await replicate.run(
-      "ibm-granite/granite-3.3-8b-instruct",
-      {
-        input: {
-          prompt,
-          max_new_tokens: 2048,
-          temperature: 0.7,
-        },
-      },
-    );
-
-    responseText = extractReplicateText(response);
-  } catch (error) {
-    if (error instanceof Error) {
-      throw new Error(`Replicate request failed: ${error.message}`);
-    }
-
-    throw new Error("Replicate request failed.");
+  if (!apiKey) {
+    throw new Error("OPENROUTER_API_KEY is not configured.");
   }
 
-  if (!responseText.trim()) {
-    throw new Error("Replicate returned an empty response.");
+  const response = await fetch(
+    "https://openrouter.ai/api/v1/chat/completions",
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+        "HTTP-Referer": "https://cognitive-mirror-six.vercel.app",
+        "X-Title": "Cognitive Mirror",
+      },
+      body: JSON.stringify({
+        model: "ibm/granite-4.1-8b",
+        response_format: {
+          type: "json_object",
+        },
+        temperature: 0.7,
+        max_tokens: 1200,
+        messages: [
+          {
+            role: "system",
+            content: "Return ONLY valid JSON. Never use markdown. Never explain.",
+          },
+          {
+            role: "user",
+            content: prompt,
+          },
+        ],
+      }),
+    },
+  );
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => null);
+
+    throw new Error(
+      `OpenRouter request failed: ${
+        error ? JSON.stringify(error) : response.statusText
+      }`,
+    );
+  }
+
+  const data = await response.json();
+  const responseText = data?.choices?.[0]?.message?.content?.trim() ?? "";
+
+  if (!responseText) {
+    throw new Error("OpenRouter returned an empty response.");
   }
 
   try {
     return JSON.parse(responseText);
   } catch {
     const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+
     if (!jsonMatch) {
-      throw new Error("Replicate response was not valid JSON.");
+      throw new Error("OpenRouter response was not valid JSON.");
     }
 
     return JSON.parse(jsonMatch[0]);
