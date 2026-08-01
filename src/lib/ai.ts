@@ -173,15 +173,31 @@ export async function evaluateText(text: string) {
       body: JSON.stringify({
         model: "ibm-granite/granite-4.1-8b",
         response_format: {
-          type: "json_object",
+          type: "json_schema",
+          json_schema: {
+            name: "cognitive_mirror",
+            schema,
+          },
         },
-        temperature: 0.7,
+        temperature: 0.2,
         max_tokens: 1200,
         messages: [
           {
             role: "system",
-            content:
-              "Return ONLY valid JSON. Never use markdown. Never explain.",
+            content: `You are a JSON generator.
+
+Rules:
+
+- Return ONLY valid JSON.
+- Do NOT output markdown.
+- Do NOT output explanations.
+- Do NOT wrap JSON in triple backticks.
+- Do NOT omit commas.
+- Do NOT leave trailing commas.
+- Every opening brace/bracket must have a closing brace/bracket.
+- The response must begin with '{'
+- The response must end with '}'
+- The JSON must be parseable by JSON.parse().`,
           },
           {
             role: "user",
@@ -209,15 +225,25 @@ export async function evaluateText(text: string) {
     throw new Error("OpenRouter returned an empty response.");
   }
 
+  let cleaned = responseText
+    .replace(/```json/g, "")
+    .replace(/```/g, "")
+    .trim();
+
+  const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+
+  if (jsonMatch) {
+    cleaned = jsonMatch[0];
+  }
+
   try {
-    return JSON.parse(responseText);
-  } catch {
-    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+    return JSON.parse(cleaned);
+  } catch (err) {
+    console.error("Model returned invalid JSON:");
+    console.error(cleaned);
 
-    if (!jsonMatch) {
-      throw new Error("OpenRouter response was not valid JSON.");
-    }
-
-    return JSON.parse(jsonMatch[0]);
+    throw new Error(
+      "The AI returned malformed JSON. Check the server logs for the full response.",
+    );
   }
 }

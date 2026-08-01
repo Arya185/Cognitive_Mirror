@@ -1,6 +1,7 @@
 # Cognitive_Mirror
 
 ## Production deployment notes
+
 Cognitive Mirror does not generate replacement copy or rewrite your draft for you. It takes your story opening, startup pitch, lyric, or brand tagline, runs one structured OpenRouter evaluation across four distinct reader lenses, and shows where those lenses agree, clash, and expose blind spots you would likely miss on your own.
 
 ## Features
