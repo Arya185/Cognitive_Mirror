@@ -9,12 +9,13 @@ services:
       - key: NODE_ENV
         value: production
       - key: PORT
-        value: 10000
+        value: 3000
       - key: WATSONX_API_KEY
         sync: false
       - key: WATSONX_PROJECT_ID
         sync: false
       - key: WATSONX_SERVICE_URL
-        value: https://us-south.ml.cloud.ibm.com
+        value: https://eu-de.ml.cloud.ibm.com
       - key: CORS_ALLOWED_ORIGINS
-        value: https://your-frontend-domain.example.com,http://localhost:5173
+        value: https://cognitive-mirror-api.onrender.com
+

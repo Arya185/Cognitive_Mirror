@@ -60,7 +60,7 @@ export function getServerConfig(): ServerConfig {
     watsonxApiKey: process.env.WATSONX_API_KEY,
     watsonxProjectId: process.env.WATSONX_PROJECT_ID,
     watsonxServiceUrl:
-      process.env.WATSONX_SERVICE_URL ?? "https://us-south.ml.cloud.ibm.com",
+      process.env.WATSONX_SERVICE_URL ?? "https://eu-de.ml.cloud.ibm.com",
     apiBaseUrl: process.env.VITE_API_BASE_URL?.replace(/\/$/, ""),
   };
 }

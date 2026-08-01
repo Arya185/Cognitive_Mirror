@@ -23,6 +23,16 @@ if (missingEnv.length > 0) {
 
 app.disable("x-powered-by");
 app.use(express.json({ limit: "1mb" }));
+
+// ---------- CORS configuration ----------
+// Read allowed origins from environment (comma-separated).
+// No hardcoded fallback – if undefined, only localhost is allowed.
+const allowedOrigins = new Set(
+  process.env.ALLOWED_ORIGINS
+    ? process.env.ALLOWED_ORIGINS.split(",").map((o) => o.trim())
+    : []
+);
+
 app.use(
   cors({
     origin: (origin, callback) => {
@@ -31,9 +41,10 @@ app.use(
         return;
       }
 
-      const allowedOrigins = new Set(config.corsAllowedOrigins);
       const isLocalhost =
-        origin.includes("localhost") || origin.includes("127.0.0.1");
+        origin.includes("localhost") ||
+        origin.includes("127.0.0.1") ||
+        origin.includes("0.0.0.0");
 
       if (allowedOrigins.has(origin) || isLocalhost) {
         callback(null, true);
@@ -43,10 +54,10 @@ app.use(
       callback(new Error(`Origin not allowed by CORS: ${origin}`));
     },
     credentials: true,
-  }),
+  })
 );
 
-// Health check endpoint
+// Health check endpoints
 app.get("/health", (req, res) => {
   res.status(200).json({ status: "ok" });
 });
@@ -68,7 +79,7 @@ app.post("/api/evaluate", async (req, res) => {
 
     if (!config.watsonxApiKey || !config.watsonxProjectId) {
       throw new Error(
-        "WATSONX_API_KEY and WATSONX_PROJECT_ID environment variables must be configured.",
+        "WATSONX_API_KEY and WATSONX_PROJECT_ID environment variables must be configured."
       );
     }
 
@@ -76,7 +87,7 @@ app.post("/api/evaluate", async (req, res) => {
       text,
       config.watsonxApiKey,
       config.watsonxProjectId,
-      config.watsonxServiceUrl,
+      config.watsonxServiceUrl
     );
     res.json(evaluationData);
   } catch (error: unknown) {
