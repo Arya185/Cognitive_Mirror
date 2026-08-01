@@ -78,18 +78,7 @@ app.post("/api/evaluate", async (req, res) => {
         .json({ error: "Text content is required for evaluation." });
     }
 
-    if (!config.watsonxApiKey || !config.watsonxProjectId) {
-      throw new Error(
-        "WATSONX_API_KEY and WATSONX_PROJECT_ID environment variables must be configured."
-      );
-    }
-
-    const evaluationData = await evaluateTextWithWatsonx(
-      text,
-      config.watsonxApiKey,
-      config.watsonxProjectId,
-      config.watsonxServiceUrl
-    );
+    const evaluationData = await evaluateTextWithWatsonx(text);
     res.json(evaluationData);
   } catch (error: unknown) {
     console.error("Cognitive Mirror Evaluation Error:", error);

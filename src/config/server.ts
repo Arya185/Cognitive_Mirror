@@ -8,9 +8,7 @@ export interface ServerConfig {
   nodeEnv: NodeEnv;
   port: number;
   corsAllowedOrigins: string[];
-  watsonxApiKey?: string;
-  watsonxProjectId?: string;
-  watsonxServiceUrl: string;
+  replicateApiToken?: string;
   apiBaseUrl?: string;
 }
 
@@ -57,10 +55,7 @@ export function getServerConfig(): ServerConfig {
       process.env.CORS_ALLOWED_ORIGINS,
       nodeEnv,
     ),
-    watsonxApiKey: process.env.WATSONX_API_KEY,
-    watsonxProjectId: process.env.WATSONX_PROJECT_ID,
-    watsonxServiceUrl:
-      process.env.WATSONX_SERVICE_URL ?? "https://eu-de.ml.cloud.ibm.com",
+    replicateApiToken: process.env.REPLICATE_API_TOKEN,
     apiBaseUrl: process.env.VITE_API_BASE_URL?.replace(/\/$/, ""),
   };
 }
@@ -68,12 +63,8 @@ export function getServerConfig(): ServerConfig {
 export function validateServerEnv(config: ServerConfig): string[] {
   const missing: string[] = [];
 
-  if (!config.watsonxApiKey) {
-    missing.push("WATSONX_API_KEY");
-  }
-
-  if (!config.watsonxProjectId) {
-    missing.push("WATSONX_PROJECT_ID");
+  if (!config.replicateApiToken) {
+    missing.push("REPLICATE_API_TOKEN");
   }
 
   return missing;

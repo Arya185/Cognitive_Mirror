@@ -238,12 +238,7 @@ function extractReplicateText(response: unknown): string {
   throw new Error("Replicate returned an unexpected response shape.");
 }
 
-export async function evaluateTextWithWatsonx(
-  text: string,
-  apiKey: string,
-  projectId: string,
-  serviceUrl: string,
-) {
+export async function evaluateTextWithWatsonx(text: string) {
   const schema = buildEvaluationResponseSchema();
   const prompt = [
     buildSystemInstruction(),
