@@ -171,7 +171,7 @@ export async function evaluateText(text: string) {
         "X-Title": "Cognitive Mirror",
       },
       body: JSON.stringify({
-        model: "ibm/granite-4.1-8b",
+        model: "ibm-granite/granite-4.1-8b",
         response_format: {
           type: "json_object",
         },
@@ -180,7 +180,8 @@ export async function evaluateText(text: string) {
         messages: [
           {
             role: "system",
-            content: "Return ONLY valid JSON. Never use markdown. Never explain.",
+            content:
+              "Return ONLY valid JSON. Never use markdown. Never explain.",
           },
           {
             role: "user",
